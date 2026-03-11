@@ -23,7 +23,6 @@ openclaw gateway restart
 
 ```bash
 openclaw plugins install @gitcrosstrack/iflow-openclaw-plugin
-openclaw gateway restart
 ```
 
 **Option B — Install locally (for development)**
@@ -34,7 +33,6 @@ cd iflow-openclaw-plugin
 npm install
 npm run build
 openclaw plugins install -l .
-openclaw gateway restart
 ```
 
 ### 3. Configure DingTalk channel + plugin notifications
@@ -75,10 +73,21 @@ Add to `~/.openclaw/openclaw.json`:
 
 > `your-dingtalk-userid` 是你的钉钉 userId，可在钉钉开发者后台或机器人收到消息的日志中获取。
 
-### 4. Launch your first session
+### 4. Install the orchestration skill
+
+Copy the skill to your OpenClaw workspace:
+
+```bash
+cp -r skills/iflow-orchestration ~/.openclaw/workspace/skills/
+openclaw gateway restart
+```
+
+> This installs the iFlow orchestration skill, which teaches your AI agent how to correctly use this plugin — including the critical rule that `iflow_respond` must only be called when iFlow explicitly signals it is waiting for input.
+
+### 5. Launch your first session
 
 ```
-/iflow Fix the bug in auth.ts
+/iflow 生成一个贪吃蛇游戏
 ```
 
 ---
