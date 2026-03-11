@@ -22,7 +22,7 @@ openclaw gateway restart
 **Option A — Install from GitHub (recommended)**
 
 ```bash
-openclaw plugins install github:gitcrosstrack/iflow-openclaw-plugin
+openclaw plugins install @gitcrosstrack/iflow-openclaw-plugin
 openclaw gateway restart
 ```
 
