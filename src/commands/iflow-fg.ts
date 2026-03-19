@@ -7,15 +7,17 @@ export function registerIFlowFgCommand(api: any) {
   api.registerCommand({
     name: "iflow_fg",
     description: "Bring an iFlow session to foreground (stream output). Usage: /iflow_fg <session-id-or-name>",
-    async execute(args: string, ctx: any) {
+    acceptsArgs: true,
+    async handler(ctx: any) {
+      const args = ctx?.args ?? "";
       const sm = getSessionManager();
-      if (!sm) return "Error: SessionManager not initialized.";
+      if (!sm) return { text: "Error: SessionManager not initialized." };
 
       const ref = args.trim();
-      if (!ref) return "Usage: /iflow_fg <session-id-or-name>";
+      if (!ref) return { text: "Usage: /iflow_fg <session-id-or-name>" };
 
       const session = sm.resolve(ref);
-      if (!session) return `Error: Session "${ref}" not found. Use /iflow_sessions to list sessions.`;
+      if (!session) return { text: `Error: Session "${ref}" not found. Use /iflow_sessions to list sessions.` };
 
       const channelId = ctx?.messageChannel || "unknown";
       const catchup = session.getCatchupOutput(channelId);
@@ -39,7 +41,7 @@ export function registerIFlowFgCommand(api: any) {
         lines.push(`--- End catchup ---`);
       }
 
-      return lines.join("\n");
+      return { text: lines.join("\n") };
     },
   });
 }

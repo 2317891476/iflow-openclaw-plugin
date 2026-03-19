@@ -7,9 +7,9 @@ export function registerIFlowStatsCommand(api: any) {
   api.registerCommand({
     name: "iflow_stats",
     description: "Show iFlow session usage statistics.",
-    async execute(_args: string, _ctx: any) {
+    async handler(_ctx: any) {
       const sm = getSessionManager();
-      if (!sm) return "Error: SessionManager not initialized.";
+      if (!sm) return { text: "Error: SessionManager not initialized." };
 
       const metrics = sm.getMetrics();
       const activeSessions = sm.list("running").length + sm.list("starting").length;
@@ -43,7 +43,7 @@ export function registerIFlowStatsCommand(api: any) {
         );
       }
 
-      return lines.join("\n");
+      return { text: lines.join("\n") };
     },
   });
 }

@@ -7,17 +7,21 @@ export function registerIFlowSessionsCommand(api: any) {
   api.registerCommand({
     name: "iflow_sessions",
     description: "List all iFlow sessions. Usage: /iflow_sessions [all|running|completed|failed|killed]",
-    async execute(args: string, _ctx: any) {
+    acceptsArgs: true,
+    async handler(ctx: any) {
+      const args = ctx?.args ?? "";
       const sm = getSessionManager();
-      if (!sm) return "Error: SessionManager not initialized.";
+      if (!sm) return { text: "Error: SessionManager not initialized." };
 
       const filter = (args.trim() || "all") as any;
       const sessions = sm.list(filter);
 
       if (sessions.length === 0) {
-        return filter === "all"
-          ? "No sessions found. Use /iflow to start a new session."
-          : `No sessions with status "${filter}".`;
+        return {
+          text: filter === "all"
+            ? "No sessions found. Use /iflow to start a new session."
+            : `No sessions with status "${filter}".`,
+        };
       }
 
       const lines: string[] = [`iFlow Sessions (${sessions.length}):`];
@@ -35,7 +39,7 @@ export function registerIFlowSessionsCommand(api: any) {
         );
       }
 
-      return lines.join("\n");
+      return { text: lines.join("\n") };
     },
   });
 }

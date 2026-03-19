@@ -8,21 +8,25 @@ export function registerIFlowResumeCommand(api: any) {
   api.registerCommand({
     name: "iflow_resume",
     description: "Resume a completed iFlow session. Usage: /iflow_resume <session-id-or-name> [new prompt]",
-    async execute(args: string, ctx: any) {
+    acceptsArgs: true,
+    async handler(ctx: any) {
+      const args = ctx?.args ?? "";
       const sm = getSessionManager();
-      if (!sm) return "Error: SessionManager not initialized.";
+      if (!sm) return { text: "Error: SessionManager not initialized." };
 
       const parts = args.trim().split(/\s+/);
       if (parts.length < 1 || !parts[0]) {
-        return [
-          "Usage: /iflow_resume <session-id-or-name> [new prompt]",
-          "",
-          "Examples:",
-          "  /iflow_resume fix-auth",
-          "  /iflow_resume fix-auth Also add unit tests",
-          "",
-          "Use /iflow_sessions to see completed sessions.",
-        ].join("\n");
+        return {
+          text: [
+            "Usage: /iflow_resume <session-id-or-name> [new prompt]",
+            "",
+            "Examples:",
+            "  /iflow_resume fix-auth",
+            "  /iflow_resume fix-auth Also add unit tests",
+            "",
+            "Use /iflow_sessions to see completed sessions.",
+          ].join("\n"),
+        };
       }
 
       const ref = parts[0];
@@ -37,7 +41,7 @@ export function registerIFlowResumeCommand(api: any) {
       const activeSession = sm.resolve(ref);
       if (activeSession) {
         if (activeSession.status === "running" || activeSession.status === "starting") {
-          return `Session "${activeSession.name}" is still running. Use /iflow_respond to send a message, or /iflow_kill to stop it first.`;
+          return { text: `Session "${activeSession.name}" is still running. Use /iflow_respond to send a message, or /iflow_kill to stop it first.` };
         }
         originalPrompt = activeSession.prompt;
         originalWorkdir = activeSession.workdir;
@@ -46,7 +50,7 @@ export function registerIFlowResumeCommand(api: any) {
       } else {
         const persisted = sm.getPersistedSession(ref);
         if (!persisted) {
-          return `Error: Session "${ref}" not found. Use /iflow_sessions to list sessions.`;
+          return { text: `Error: Session "${ref}" not found. Use /iflow_sessions to list sessions.` };
         }
         originalPrompt = persisted.prompt;
         originalWorkdir = persisted.workdir;
@@ -74,16 +78,18 @@ export function registerIFlowResumeCommand(api: any) {
           originAgentId: ctx?.agentId,
         });
 
-        return [
-          `↩️ Resumed session as "${newSession.name}" [${newSession.id}].`,
-          `   Original: "${originalName}"`,
-          `   Dir: ${workdir}`,
-          ...(extraPrompt ? [`   Added: "${extraPrompt}"`] : []),
-          ``,
-          `Use /iflow_fg ${newSession.name} to stream output.`,
-        ].join("\n");
+        return {
+          text: [
+            `↩️ Resumed session as "${newSession.name}" [${newSession.id}].`,
+            `   Original: "${originalName}"`,
+            `   Dir: ${workdir}`,
+            ...(extraPrompt ? [`   Added: "${extraPrompt}"`] : []),
+            ``,
+            `Use /iflow_fg ${newSession.name} to stream output.`,
+          ].join("\n"),
+        };
       } catch (err: any) {
-        return `Error resuming session: ${err.message}`;
+        return { text: `Error resuming session: ${err.message}` };
       }
     },
   });

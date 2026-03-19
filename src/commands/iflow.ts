@@ -9,10 +9,12 @@ export function registerIFlowCommand(api: any) {
   api.registerCommand({
     name: "iflow",
     description: "Launch a new iFlow session. Usage: /iflow [--name <name>] <prompt>",
-    async execute(args: string, ctx: any) {
+    acceptsArgs: true,
+    async handler(ctx: any) {
+      const args = ctx?.args ?? "";
       const sm = getSessionManager();
       if (!sm) {
-        return "Error: SessionManager not initialized.";
+        return { text: "Error: SessionManager not initialized." };
       }
 
       let name: string | undefined;
@@ -26,13 +28,15 @@ export function registerIFlowCommand(api: any) {
       }
 
       if (!prompt) {
-        return [
-          "Usage: /iflow [--name <name>] <prompt>",
-          "",
-          "Examples:",
-          "  /iflow Fix the authentication bug in src/auth.ts",
-          "  /iflow --name fix-auth Fix the authentication bug",
-        ].join("\n");
+        return {
+          text: [
+            "Usage: /iflow [--name <name>] <prompt>",
+            "",
+            "Examples:",
+            "  /iflow Fix the authentication bug in src/auth.ts",
+            "  /iflow --name fix-auth Fix the authentication bug",
+          ].join("\n"),
+        };
       }
 
       const workdir = ctx?.workspaceDir || pluginConfig.defaultWorkdir || process.cwd();
@@ -50,16 +54,18 @@ export function registerIFlowCommand(api: any) {
           originAgentId: ctx?.agentId,
         });
 
-        return [
-          `↩️ iFlow session launched!`,
-          `  Name: ${session.name}`,
-          `  ID: ${session.id}`,
-          `  Dir: ${workdir}`,
-          ``,
-          `Use /iflow_sessions to check status, /iflow_fg ${session.name} to stream output.`,
-        ].join("\n");
+        return {
+          text: [
+            `↩️ iFlow session launched!`,
+            `  Name: ${session.name}`,
+            `  ID: ${session.id}`,
+            `  Dir: ${workdir}`,
+            ``,
+            `Use /iflow_sessions to check status, /iflow_fg ${session.name} to stream output.`,
+          ].join("\n"),
+        };
       } catch (err: any) {
-        return `Error: ${err.message}`;
+        return { text: `Error: ${err.message}` };
       }
     },
   });
