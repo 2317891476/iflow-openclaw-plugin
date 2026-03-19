@@ -124,7 +124,6 @@ export class ChatBridgeManager {
 
     if (ctx.messageChannel) {
       existingSession.foregroundChannels.add(ctx.messageChannel);
-      existingSession.markFgOutputSeen(ctx.messageChannel);
     }
 
     if (existingSession.isWaitingForInput) {
@@ -201,7 +200,6 @@ export class ChatBridgeManager {
 
     if (ctx.messageChannel) {
       session.foregroundChannels.add(ctx.messageChannel);
-      session.markFgOutputSeen(ctx.messageChannel);
     }
 
     const key = buildChatBindingKey(ctx);
