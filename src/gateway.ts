@@ -4,13 +4,14 @@ function ok(respond: any, payload: any): void {
   respond(true, payload);
 }
 
-function fail(respond: any, err: unknown): void {
+function fail(respond: any, err: any): void {
   const message = err instanceof Error ? err.message : String(err);
-  respond(false, undefined, { code: "INVALID_REQUEST", message });
+  respond(false, undefined, { message });
 }
 
 /**
  * Register Gateway methods for iFlow plugin.
+ * These allow external systems to interact with iFlow sessions via the OpenClaw gateway.
  */
 export function registerGatewayMethods(api: any): void {
   api.registerGatewayMethod?.("iflow.launch", async ({ params, respond }: any) => {
@@ -47,8 +48,9 @@ export function registerGatewayMethods(api: any): void {
     try {
       const sm = getSessionManager();
       if (!sm) throw new Error("SessionManager not initialized");
+
       const filter = params?.filter ?? "all";
-      ok(respond, sm.list(filter).map((s) => ({
+      const sessions = sm.list(filter).map((s) => ({
         id: s.id,
         name: s.name,
         status: s.status,
@@ -59,7 +61,9 @@ export function registerGatewayMethods(api: any): void {
         duration: formatDuration(s.duration),
         turnCount: s.turnCount,
         error: s.error,
-      })));
+      }));
+
+      ok(respond, sessions);
     } catch (err) {
       fail(respond, err);
     }
@@ -69,10 +73,13 @@ export function registerGatewayMethods(api: any): void {
     try {
       const sm = getSessionManager();
       if (!sm) throw new Error("SessionManager not initialized");
+
       const ref = params?.session;
       if (!ref) throw new Error("session is required");
+
       const session = sm.resolve(ref);
       if (!session) throw new Error(`Session "${ref}" not found`);
+
       ok(respond, { success: sm.kill(session.id), id: session.id, name: session.name });
     } catch (err) {
       fail(respond, err);
@@ -83,16 +90,27 @@ export function registerGatewayMethods(api: any): void {
     try {
       const sm = getSessionManager();
       if (!sm) throw new Error("SessionManager not initialized");
+
       const ref = params?.session;
       if (!ref) throw new Error("session is required");
+
       const session = sm.resolve(ref);
       if (!session) {
         const persisted = sm.getPersistedSession(ref);
-        if (persisted) return ok(respond, { id: persisted.sessionId, name: persisted.name, status: persisted.status, output: [] });
+        if (persisted) {
+          ok(respond, { id: persisted.sessionId, name: persisted.name, status: persisted.status, output: [] });
+          return;
+        }
         throw new Error(`Session "${ref}" not found`);
       }
+
       const lines = params?.full ? undefined : (params?.lines ?? 50);
-      ok(respond, { id: session.id, name: session.name, status: session.status, output: session.getOutput(lines) });
+      ok(respond, {
+        id: session.id,
+        name: session.name,
+        status: session.status,
+        output: session.getOutput(lines),
+      });
     } catch (err) {
       fail(respond, err);
     }
@@ -102,13 +120,16 @@ export function registerGatewayMethods(api: any): void {
     try {
       const sm = getSessionManager();
       if (!sm) throw new Error("SessionManager not initialized");
+
       const ref = params?.session;
       const message = params?.message;
       if (!ref) throw new Error("session is required");
       if (!message) throw new Error("message is required");
+
       const session = sm.resolve(ref);
       if (!session) throw new Error(`Session "${ref}" not found`);
       if (session.status !== "running") throw new Error(`Session "${session.name}" is not running (status: ${session.status})`);
+
       await session.sendMessage(message);
       ok(respond, { success: true, id: session.id, name: session.name });
     } catch (err) {
@@ -120,6 +141,7 @@ export function registerGatewayMethods(api: any): void {
     try {
       const sm = getSessionManager();
       if (!sm) throw new Error("SessionManager not initialized");
+
       const metrics = sm.getMetrics();
       const activeSessions = sm.list("running").length + sm.list("starting").length;
       ok(respond, {
@@ -141,10 +163,15 @@ export function registerGatewayMethods(api: any): void {
     try {
       const bridge = getChatBridgeManager();
       if (!bridge) throw new Error("Chat bridge not initialized");
+
       const message = params?.message;
       if (!message || typeof message !== "string") throw new Error("message is required");
+
       const sessionKey = params?.sessionKey;
-      if (!sessionKey || typeof sessionKey !== "string") throw new Error("sessionKey is required for iflow.chat in Control UI/WebChat contexts");
+      if (!sessionKey || typeof sessionKey !== "string") {
+        throw new Error("sessionKey is required for iflow.chat in Control UI/WebChat contexts");
+      }
+
       const conversationId = params?.conversationId ?? params?.chatId ?? sessionKey;
       const ctx = {
         workspaceDir: params?.workdir ?? params?.workspaceDir,
@@ -154,6 +181,7 @@ export function registerGatewayMethods(api: any): void {
         conversationId,
         sessionKey,
       };
+
       const text = await bridge.handleInput(params?.newSession ? `start ${message}` : message, ctx);
       const info = bridge.getSessionInfo(ctx);
       ok(respond, {
@@ -184,8 +212,12 @@ export function registerGatewayMethods(api: any): void {
     try {
       const bridge = getChatBridgeManager();
       if (!bridge) throw new Error("Chat bridge not initialized");
+
       const sessionKey = params?.sessionKey;
-      if (!sessionKey || typeof sessionKey !== "string") throw new Error("sessionKey is required for iflow.chat.status in Control UI/WebChat contexts");
+      if (!sessionKey || typeof sessionKey !== "string") {
+        throw new Error("sessionKey is required for iflow.chat.status in Control UI/WebChat contexts");
+      }
+
       const conversationId = params?.conversationId ?? params?.chatId ?? sessionKey;
       const ctx = {
         workspaceDir: params?.workdir ?? params?.workspaceDir,
@@ -195,6 +227,7 @@ export function registerGatewayMethods(api: any): void {
         conversationId,
         sessionKey,
       };
+
       const info = bridge.getSessionInfo(ctx);
       ok(respond, {
         ok: true,
@@ -225,8 +258,12 @@ export function registerGatewayMethods(api: any): void {
     try {
       const bridge = getChatBridgeManager();
       if (!bridge) throw new Error("Chat bridge not initialized");
+
       const sessionKey = params?.sessionKey;
-      if (!sessionKey || typeof sessionKey !== "string") throw new Error("sessionKey is required for iflow.chat.stop in Control UI/WebChat contexts");
+      if (!sessionKey || typeof sessionKey !== "string") {
+        throw new Error("sessionKey is required for iflow.chat.stop in Control UI/WebChat contexts");
+      }
+
       const conversationId = params?.conversationId ?? params?.chatId ?? sessionKey;
       const ctx = {
         workspaceDir: params?.workdir ?? params?.workspaceDir,
@@ -236,8 +273,15 @@ export function registerGatewayMethods(api: any): void {
         conversationId,
         sessionKey,
       };
+
       const result = bridge.stop(ctx);
-      ok(respond, { ok: result.ok, mode: "rpc-first-chat", conversationId, sessionKey, text: result.message });
+      ok(respond, {
+        ok: result.ok,
+        mode: "rpc-first-chat",
+        conversationId,
+        sessionKey,
+        text: result.message,
+      });
     } catch (err) {
       fail(respond, err);
     }
@@ -249,8 +293,12 @@ export function registerGatewayMethods(api: any): void {
       const sm = getSessionManager();
       if (!bridge) throw new Error("Chat bridge not initialized");
       if (!sm) throw new Error("SessionManager not initialized");
+
       const sessionKey = params?.sessionKey;
-      if (!sessionKey || typeof sessionKey !== "string") throw new Error("sessionKey is required for iflow.chat.output in Control UI/WebChat contexts");
+      if (!sessionKey || typeof sessionKey !== "string") {
+        throw new Error("sessionKey is required for iflow.chat.output in Control UI/WebChat contexts");
+      }
+
       const conversationId = params?.conversationId ?? params?.chatId ?? sessionKey;
       const ctx = {
         workspaceDir: params?.workdir ?? params?.workspaceDir,
@@ -260,10 +308,13 @@ export function registerGatewayMethods(api: any): void {
         conversationId,
         sessionKey,
       };
+
       const info = bridge.getSessionInfo(ctx);
       if (!info) throw new Error(`No active bound chat for conversationId "${conversationId}"`);
+
       const session = info.session ?? sm.resolve(info.binding.sessionId) ?? sm.resolve(info.binding.sessionName);
       if (!session) throw new Error(`Bound session "${info.binding.sessionName}" is no longer active`);
+
       ok(respond, {
         ok: true,
         mode: "rpc-first-chat",
