@@ -188,8 +188,8 @@ export class ChatBridgeManager {
 
   private launchBoundSession(message: string, ctx: ChatBridgeCommandContext, previous?: ChatBridgeBinding): string {
     const workdir = ctx.workspaceDir || pluginConfig.defaultWorkdir || process.cwd();
-    const channelId = ctx.messageChannel || "unknown";
-    let originChannel = resolveOriginChannel({ id: "chat" }, resolveAgentChannel(workdir) || channelId);
+    const channelId = resolveForegroundChannel(ctx);
+    let originChannel = resolveOriginChannel({ id: "chat" }, resolveAgentChannel(workdir) || ctx.messageChannel || "unknown");
     if (originChannel === "unknown") {
       const agentChannel = resolveAgentChannel(workdir);
       if (agentChannel) originChannel = agentChannel;
@@ -203,9 +203,7 @@ export class ChatBridgeManager {
       originAgentId: ctx.agentId,
     });
 
-    if (ctx.messageChannel) {
-      session.foregroundChannels.add(ctx.messageChannel);
-    }
+    session.foregroundChannels.add(channelId);
 
     const key = buildChatBindingKey(ctx);
     const binding: ChatBridgeBinding = {
