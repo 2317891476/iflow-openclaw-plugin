@@ -122,9 +122,7 @@ export class ChatBridgeManager {
       return this.launchBoundSession(message, ctx, existing);
     }
 
-    if (ctx.messageChannel) {
-      existingSession.foregroundChannels.add(ctx.messageChannel);
-    }
+    existingSession.foregroundChannels.add(resolveForegroundChannel(ctx));
 
     if (existingSession.isWaitingForInput) {
       existingSession.resetAutoRespond();

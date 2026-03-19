@@ -119,7 +119,7 @@ Use this when you want to call iFlow more like a normal chat API while still reu
 
 - Chat command: `/iflow_chat <message>`
 - Supports `/iflow_chat status` and `/iflow_chat stop`
-- Assistant output from the bound iFlow session is automatically forwarded back into the current chat; `/iflow_fg` remains optional for raw streaming/debugging.
+- In Control UI / WebChat, bound chat replies are injected back into the current transcript via `chat.inject`; `/iflow_fg` remains optional for raw streaming/debugging.
 - RPC methods: `iflow.chat`, `iflow.chat.status`, `iflow.chat.output`, `iflow.chat.stop`
 
 `iflow.chat` keeps a bound conversation per `conversationId` (or `chatId` / `sessionKey`) and will reuse the same underlying iFlow session until you explicitly start a new one or stop it.

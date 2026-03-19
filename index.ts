@@ -92,6 +92,28 @@ function register(api: any) {
       // Build the sendMessage function for NotificationRouter
       // Routes messages to the correct channel via `openclaw message send` CLI
       const sendMessage = (channelId: string, text: string) => {
+        if (channelId.startsWith("chatinject|")) {
+          const sessionKey = channelId.slice("chatinject|".length);
+          if (!sessionKey) {
+            console.warn(`[iflow-plugin] sendMessage(chat.inject): missing sessionKey — message dropped`);
+            return;
+          }
+          const cliArgs = [
+            "gateway", "call", "chat.inject",
+            "--params", JSON.stringify({ sessionKey, message: text, label: "iflow-chat" }),
+          ];
+          execFile("openclaw", cliArgs, { timeout: 15_000 }, (err, stdout, stderr) => {
+            if (err) {
+              console.error(`[iflow-plugin] chat.inject ERROR for sessionKey=${sessionKey}: ${err.message}`);
+              if (stderr) console.error(`[iflow-plugin] chat.inject STDERR: ${stderr}`);
+            } else {
+              console.log(`[iflow-plugin] chat.inject OK -> sessionKey=${sessionKey}`);
+              if (stdout.trim()) console.log(`[iflow-plugin] chat.inject STDOUT: ${stdout.trim()}`);
+            }
+          });
+          return;
+        }
+
         // Parse fallback channel from config
         let fallbackChannel = "telegram";
         let fallbackTarget = "";
