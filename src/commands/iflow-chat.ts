@@ -34,6 +34,5 @@ function registerAlias(api: any, name: string, description: string) {
  */
 export function registerIFlowChatCommand(api: any) {
   registerAlias(api, "iflow_chat", "Simple chat mode for iFlow. Use /iflow_chat <message>, plus /iflow_chat status|stop.");
-  registerAlias(api, "iflow", "Simple iFlow chat alias. Use /iflow <message>, plus /iflow status|stop|new <message>.");
   registerAlias(api, "i", "Short iFlow chat alias. Use /i <message>, plus /i status|stop|new <message>.");
 }

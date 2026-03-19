@@ -117,9 +117,10 @@ Use this when you want named background sessions, foreground/background switchin
 ### 2) Chat/API mode (simple conversation façade)
 Use this when you want to call iFlow more like a normal chat API while still reusing the same backend session engine.
 
-- Preferred chat commands: `/i <message>` and `/iflow <message>`
+- Preferred chat command: `/i <message>`
 - Compatibility command: `/iflow_chat <message>`
-- Supports `status`, `stop`, and `new <message>` on all three aliases
+- Supports `status`, `stop`, and `new <message>` on the chat commands above
+- `/iflow` remains the orchestration/task-launch command
 - In Control UI / WebChat, bound chat replies are injected back into the current transcript via `chat.inject` using the current session key when available; `/iflow_fg` remains optional for raw streaming/debugging.
 - RPC methods: `iflow.chat`, `iflow.chat.status`, `iflow.chat.output`, `iflow.chat.stop`
 
