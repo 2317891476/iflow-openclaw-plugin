@@ -278,8 +278,8 @@ This plugin uses the [iFlow TypeScript SDK](https://platform.iflow.cn/cli/sdk/sd
 
 | Method | Description |
 |--------|-------------|
-| `iflow.chat` | Start or continue a bound chat conversation |
-| `iflow.chat.status` | Inspect the current bound chat session for a conversation ID |
+| `iflow.chat` | Start or continue a bound chat conversation (RPC-first) |
+| `iflow.chat.status` | Inspect the current bound chat session for a transcript/session key |
 | `iflow.chat.output` | Read buffered output from the bound chat session |
 | `iflow.chat.stop` | Detach the conversation from its current bound iFlow session |
 
@@ -287,13 +287,16 @@ This plugin uses the [iFlow TypeScript SDK](https://platform.iflow.cn/cli/sdk/sd
 
 | Param | Required | Description |
 |------|----------|-------------|
-| `conversationId` | Yes | Stable external chat ID used to bind/reuse an iFlow session |
+| `sessionKey` | Yes | Current OpenClaw transcript/session key; required for Control UI / WebChat auto-injection |
 | `message` | Yes | User message to send |
+| `conversationId` | No | Optional stable external chat ID used to bind/reuse an iFlow session; defaults to `sessionKey` |
 | `workspaceDir` / `workdir` | No | Working directory for newly created bound sessions |
-| `messageChannel` | No | Optional logical channel ID; defaults to `rpc` |
+| `messageChannel` | No | Optional logical channel tag; defaults to `rpc` |
 | `agentId` | No | Optional agent identifier for routing / metadata |
 | `agentAccountId` | No | Optional account identifier |
 | `newSession` | No | If `true`, force a fresh iFlow session for this conversation |
+
+> In current OpenClaw Control UI / WebChat, plugin slash commands do **not** receive the transcript `sessionKey`, so `/iflow_chat` cannot be relied on as the primary auto-reply path there. Use `iflow.chat*` RPC instead.
 
 ---
 
@@ -333,3 +336,4 @@ src/
 ## License
 
 MIT
+IT

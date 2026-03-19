@@ -135,7 +135,7 @@ export function registerGatewayMethods(api: any): void {
     };
   });
 
-  // iflow.chat — Simple API-oriented chat facade over bound sessions
+  // iflow.chat — RPC-first chat facade. Control UI/WebChat callers should pass sessionKey explicitly.
   api.registerRpcMethod?.("iflow.chat", async (params: any) => {
     const bridge = getChatBridgeManager();
     if (!bridge) throw new Error("Chat bridge not initialized");
@@ -143,29 +143,29 @@ export function registerGatewayMethods(api: any): void {
     const message = params?.message;
     if (!message || typeof message !== "string") throw new Error("message is required");
 
-    const conversationId = params?.conversationId ?? params?.chatId ?? params?.sessionKey;
-    if (!conversationId || typeof conversationId !== "string") {
-      throw new Error("conversationId (or chatId/sessionKey) is required");
+    const sessionKey = params?.sessionKey;
+    if (!sessionKey || typeof sessionKey !== "string") {
+      throw new Error("sessionKey is required for iflow.chat in Control UI/WebChat contexts");
     }
 
+    const conversationId = params?.conversationId ?? params?.chatId ?? sessionKey;
     const ctx = {
       workspaceDir: params?.workdir ?? params?.workspaceDir,
       messageChannel: params?.messageChannel ?? "rpc",
       agentId: params?.agentId,
       agentAccountId: params?.agentAccountId,
       conversationId,
+      sessionKey,
     };
 
-    const text = await bridge.handleInput(
-      params?.newSession ? `start ${message}` : message,
-      ctx,
-    );
-
+    const text = await bridge.handleInput(params?.newSession ? `start ${message}` : message, ctx);
     const info = bridge.getSessionInfo(ctx);
     return {
       ok: true,
+      mode: "rpc-first-chat",
       text,
       conversationId,
+      sessionKey,
       binding: info ? {
         sessionId: info.binding.sessionId,
         sessionName: info.binding.sessionName,
@@ -185,23 +185,27 @@ export function registerGatewayMethods(api: any): void {
     const bridge = getChatBridgeManager();
     if (!bridge) throw new Error("Chat bridge not initialized");
 
-    const conversationId = params?.conversationId ?? params?.chatId ?? params?.sessionKey;
-    if (!conversationId || typeof conversationId !== "string") {
-      throw new Error("conversationId (or chatId/sessionKey) is required");
+    const sessionKey = params?.sessionKey;
+    if (!sessionKey || typeof sessionKey !== "string") {
+      throw new Error("sessionKey is required for iflow.chat.status in Control UI/WebChat contexts");
     }
 
+    const conversationId = params?.conversationId ?? params?.chatId ?? sessionKey;
     const ctx = {
       workspaceDir: params?.workdir ?? params?.workspaceDir,
       messageChannel: params?.messageChannel ?? "rpc",
       agentId: params?.agentId,
       agentAccountId: params?.agentAccountId,
       conversationId,
+      sessionKey,
     };
 
     const info = bridge.getSessionInfo(ctx);
     return {
       ok: true,
+      mode: "rpc-first-chat",
       conversationId,
+      sessionKey,
       text: bridge.status(ctx),
       bound: !!info,
       binding: info ? {
@@ -223,23 +227,27 @@ export function registerGatewayMethods(api: any): void {
     const bridge = getChatBridgeManager();
     if (!bridge) throw new Error("Chat bridge not initialized");
 
-    const conversationId = params?.conversationId ?? params?.chatId ?? params?.sessionKey;
-    if (!conversationId || typeof conversationId !== "string") {
-      throw new Error("conversationId (or chatId/sessionKey) is required");
+    const sessionKey = params?.sessionKey;
+    if (!sessionKey || typeof sessionKey !== "string") {
+      throw new Error("sessionKey is required for iflow.chat.stop in Control UI/WebChat contexts");
     }
 
+    const conversationId = params?.conversationId ?? params?.chatId ?? sessionKey;
     const ctx = {
       workspaceDir: params?.workdir ?? params?.workspaceDir,
       messageChannel: params?.messageChannel ?? "rpc",
       agentId: params?.agentId,
       agentAccountId: params?.agentAccountId,
       conversationId,
+      sessionKey,
     };
 
     const result = bridge.stop(ctx);
     return {
       ok: result.ok,
+      mode: "rpc-first-chat",
       conversationId,
+      sessionKey,
       text: result.message,
     };
   });
@@ -250,17 +258,19 @@ export function registerGatewayMethods(api: any): void {
     if (!bridge) throw new Error("Chat bridge not initialized");
     if (!sm) throw new Error("SessionManager not initialized");
 
-    const conversationId = params?.conversationId ?? params?.chatId ?? params?.sessionKey;
-    if (!conversationId || typeof conversationId !== "string") {
-      throw new Error("conversationId (or chatId/sessionKey) is required");
+    const sessionKey = params?.sessionKey;
+    if (!sessionKey || typeof sessionKey !== "string") {
+      throw new Error("sessionKey is required for iflow.chat.output in Control UI/WebChat contexts");
     }
 
+    const conversationId = params?.conversationId ?? params?.chatId ?? sessionKey;
     const ctx = {
       workspaceDir: params?.workdir ?? params?.workspaceDir,
       messageChannel: params?.messageChannel ?? "rpc",
       agentId: params?.agentId,
       agentAccountId: params?.agentAccountId,
       conversationId,
+      sessionKey,
     };
 
     const info = bridge.getSessionInfo(ctx);
@@ -272,7 +282,9 @@ export function registerGatewayMethods(api: any): void {
     const output = session.getOutput(params?.full ? undefined : (params?.lines ?? 50));
     return {
       ok: true,
+      mode: "rpc-first-chat",
       conversationId,
+      sessionKey,
       binding: {
         sessionId: info.binding.sessionId,
         sessionName: info.binding.sessionName,
