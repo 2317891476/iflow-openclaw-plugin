@@ -6,7 +6,6 @@ import { makeIFlowKillTool } from "./src/tools/iflow-kill";
 import { makeIFlowOutputTool } from "./src/tools/iflow-output";
 import { makeIFlowSessionsTool } from "./src/tools/iflow-sessions";
 import { makeIFlowStatsTool } from "./src/tools/iflow-stats";
-import { registerIFlowCommand } from "./src/commands/iflow";
 import { registerIFlowSessionsCommand } from "./src/commands/iflow-sessions";
 import { registerIFlowKillCommand } from "./src/commands/iflow-kill";
 import { registerIFlowFgCommand } from "./src/commands/iflow-fg";
@@ -58,7 +57,6 @@ function register(api: any) {
 
   // ─── Commands ────────────────────────────────────────────────────────────────────
 
-  registerIFlowCommand(api);
   registerIFlowSessionsCommand(api);
   registerIFlowKillCommand(api);
   registerIFlowFgCommand(api);
