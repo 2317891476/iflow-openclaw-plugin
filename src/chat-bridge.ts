@@ -19,6 +19,11 @@ export interface ChatBridgeCommandContext {
   conversationId?: string;
 }
 
+export interface ChatBridgeSessionInfo {
+  binding: ChatBridgeBinding;
+  session?: Session;
+}
+
 function buildChatBindingKey(ctx: ChatBridgeCommandContext): string {
   return [
     ctx.messageChannel || "unknown",
@@ -39,6 +44,13 @@ export class ChatBridgeManager {
 
   getBinding(ctx: ChatBridgeCommandContext): ChatBridgeBinding | undefined {
     return this.bindings.get(buildChatBindingKey(ctx));
+  }
+
+  getSessionInfo(ctx: ChatBridgeCommandContext): ChatBridgeSessionInfo | undefined {
+    const binding = this.getBinding(ctx);
+    if (!binding) return undefined;
+    const session = this.sm.resolve(binding.sessionId) ?? this.sm.resolve(binding.sessionName);
+    return { binding, session };
   }
 
   stop(ctx: ChatBridgeCommandContext): { ok: boolean; message: string } {

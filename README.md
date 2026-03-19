@@ -94,6 +94,7 @@ openclaw gateway restart
 
 ## Features
 
+- **Two usage modes** — use iFlow as either a normal API/chat conversation layer or a multi-agent orchestration layer
 - **Multi-session management** — Run multiple concurrent iFlow sessions, each with a unique ID and human-readable name
 - **Foreground / background model** — Sessions run in background by default; bring any to foreground to stream output in real time, with catchup of missed output
 - **Real-time notifications** — Get notified on completion, failure, or when iFlow is waiting for input
@@ -103,6 +104,39 @@ openclaw gateway restart
 - **Automatic cleanup** — Completed sessions garbage-collected after 1 hour
 
 ---
+
+## Usage Modes
+
+### 1) Orchestration mode (existing multi-agent workflow)
+Use this when you want named background sessions, foreground/background switching, waiting-for-input handling, and explicit coordination across multiple agents.
+
+- Chat commands: `/iflow`, `/iflow_sessions`, `/iflow_fg`, `/iflow_bg`, `/iflow_respond`, `/iflow_kill`, `/iflow_resume`, `/iflow_stats`
+- Tools: `iflow_launch`, `iflow_sessions`, `iflow_output`, `iflow_respond`, `iflow_fg`, `iflow_bg`, `iflow_kill`, `iflow_stats`
+- RPC: `iflow.launch`, `iflow.sessions`, `iflow.output`, `iflow.respond`, `iflow.kill`, `iflow.stats`
+
+### 2) Chat/API mode (simple conversation façade)
+Use this when you want to call iFlow more like a normal chat API while still reusing the same backend session engine.
+
+- Chat command: `/iflow_chat <message>`
+- Supports `/iflow_chat status` and `/iflow_chat stop`
+- RPC methods: `iflow.chat`, `iflow.chat.status`, `iflow.chat.output`, `iflow.chat.stop`
+
+`iflow.chat` keeps a bound conversation per `conversationId` (or `chatId` / `sessionKey`) and will reuse the same underlying iFlow session until you explicitly start a new one or stop it.
+
+### Chat/API RPC example
+
+```json
+{
+  "method": "iflow.chat",
+  "params": {
+    "conversationId": "web-demo-1",
+    "message": "帮我检查这个仓库的测试失败原因",
+    "workspaceDir": "/home/illya/project"
+  }
+}
+```
+
+Send another message with the same `conversationId` to continue the same bound chat. Set `newSession: true` to force a fresh iFlow session while keeping the same external conversation identifier.
 
 ## Tools
 
@@ -228,14 +262,37 @@ This plugin uses the [iFlow TypeScript SDK](https://platform.iflow.cn/cli/sdk/sd
 
 ## Gateway RPC Methods
 
+### Orchestration RPC
+
 | Method | Description |
 |--------|-------------|
-| `iflow.launch` | Launch a session |
-| `iflow.sessions` | List sessions |
+| `iflow.launch` | Launch a task/session |
+| `iflow.sessions` | List orchestration sessions |
 | `iflow.kill` | Terminate a session |
 | `iflow.output` | Read session output |
-| `iflow.respond` | Send a message to a session |
+| `iflow.respond` | Send a message to a waiting session |
 | `iflow.stats` | Get usage statistics |
+
+### Chat/API RPC
+
+| Method | Description |
+|--------|-------------|
+| `iflow.chat` | Start or continue a bound chat conversation |
+| `iflow.chat.status` | Inspect the current bound chat session for a conversation ID |
+| `iflow.chat.output` | Read buffered output from the bound chat session |
+| `iflow.chat.stop` | Detach the conversation from its current bound iFlow session |
+
+#### `iflow.chat` parameters
+
+| Param | Required | Description |
+|------|----------|-------------|
+| `conversationId` | Yes | Stable external chat ID used to bind/reuse an iFlow session |
+| `message` | Yes | User message to send |
+| `workspaceDir` / `workdir` | No | Working directory for newly created bound sessions |
+| `messageChannel` | No | Optional logical channel ID; defaults to `rpc` |
+| `agentId` | No | Optional agent identifier for routing / metadata |
+| `agentAccountId` | No | Optional account identifier |
+| `newSession` | No | If `true`, force a fresh iFlow session for this conversation |
 
 ---
 

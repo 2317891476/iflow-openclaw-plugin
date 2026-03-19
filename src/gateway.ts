@@ -1,4 +1,4 @@
-import { getSessionManager, formatDuration } from "./shared";
+import { getSessionManager, getChatBridgeManager, formatDuration } from "./shared";
 
 /**
  * Register Gateway RPC methods for iFlow plugin.
@@ -132,6 +132,160 @@ export function registerGatewayMethods(api: any): void {
         ? Math.floor(metrics.totalDurationMs / metrics.sessionsWithDuration)
         : 0,
       mostExpensive: metrics.mostExpensive,
+    };
+  });
+
+  // iflow.chat — Simple API-oriented chat facade over bound sessions
+  api.registerRpcMethod?.("iflow.chat", async (params: any) => {
+    const bridge = getChatBridgeManager();
+    if (!bridge) throw new Error("Chat bridge not initialized");
+
+    const message = params?.message;
+    if (!message || typeof message !== "string") throw new Error("message is required");
+
+    const conversationId = params?.conversationId ?? params?.chatId ?? params?.sessionKey;
+    if (!conversationId || typeof conversationId !== "string") {
+      throw new Error("conversationId (or chatId/sessionKey) is required");
+    }
+
+    const ctx = {
+      workspaceDir: params?.workdir ?? params?.workspaceDir,
+      messageChannel: params?.messageChannel ?? "rpc",
+      agentId: params?.agentId,
+      agentAccountId: params?.agentAccountId,
+      conversationId,
+    };
+
+    const text = await bridge.handleInput(
+      params?.newSession ? `start ${message}` : message,
+      ctx,
+    );
+
+    const info = bridge.getSessionInfo(ctx);
+    return {
+      ok: true,
+      text,
+      conversationId,
+      binding: info ? {
+        sessionId: info.binding.sessionId,
+        sessionName: info.binding.sessionName,
+        queuedMessages: info.binding.pendingMessages.length,
+      } : undefined,
+      session: info?.session ? {
+        id: info.session.id,
+        name: info.session.name,
+        status: info.session.status,
+        waitingForInput: info.session.isWaitingForInput,
+        workdir: info.session.workdir,
+      } : undefined,
+    };
+  });
+
+  api.registerRpcMethod?.("iflow.chat.status", async (params: any) => {
+    const bridge = getChatBridgeManager();
+    if (!bridge) throw new Error("Chat bridge not initialized");
+
+    const conversationId = params?.conversationId ?? params?.chatId ?? params?.sessionKey;
+    if (!conversationId || typeof conversationId !== "string") {
+      throw new Error("conversationId (or chatId/sessionKey) is required");
+    }
+
+    const ctx = {
+      workspaceDir: params?.workdir ?? params?.workspaceDir,
+      messageChannel: params?.messageChannel ?? "rpc",
+      agentId: params?.agentId,
+      agentAccountId: params?.agentAccountId,
+      conversationId,
+    };
+
+    const info = bridge.getSessionInfo(ctx);
+    return {
+      ok: true,
+      conversationId,
+      text: bridge.status(ctx),
+      bound: !!info,
+      binding: info ? {
+        sessionId: info.binding.sessionId,
+        sessionName: info.binding.sessionName,
+        queuedMessages: info.binding.pendingMessages.length,
+      } : undefined,
+      session: info?.session ? {
+        id: info.session.id,
+        name: info.session.name,
+        status: info.session.status,
+        waitingForInput: info.session.isWaitingForInput,
+        workdir: info.session.workdir,
+      } : undefined,
+    };
+  });
+
+  api.registerRpcMethod?.("iflow.chat.stop", async (params: any) => {
+    const bridge = getChatBridgeManager();
+    if (!bridge) throw new Error("Chat bridge not initialized");
+
+    const conversationId = params?.conversationId ?? params?.chatId ?? params?.sessionKey;
+    if (!conversationId || typeof conversationId !== "string") {
+      throw new Error("conversationId (or chatId/sessionKey) is required");
+    }
+
+    const ctx = {
+      workspaceDir: params?.workdir ?? params?.workspaceDir,
+      messageChannel: params?.messageChannel ?? "rpc",
+      agentId: params?.agentId,
+      agentAccountId: params?.agentAccountId,
+      conversationId,
+    };
+
+    const result = bridge.stop(ctx);
+    return {
+      ok: result.ok,
+      conversationId,
+      text: result.message,
+    };
+  });
+
+  api.registerRpcMethod?.("iflow.chat.output", async (params: any) => {
+    const bridge = getChatBridgeManager();
+    const sm = getSessionManager();
+    if (!bridge) throw new Error("Chat bridge not initialized");
+    if (!sm) throw new Error("SessionManager not initialized");
+
+    const conversationId = params?.conversationId ?? params?.chatId ?? params?.sessionKey;
+    if (!conversationId || typeof conversationId !== "string") {
+      throw new Error("conversationId (or chatId/sessionKey) is required");
+    }
+
+    const ctx = {
+      workspaceDir: params?.workdir ?? params?.workspaceDir,
+      messageChannel: params?.messageChannel ?? "rpc",
+      agentId: params?.agentId,
+      agentAccountId: params?.agentAccountId,
+      conversationId,
+    };
+
+    const info = bridge.getSessionInfo(ctx);
+    if (!info) throw new Error(`No active bound chat for conversationId "${conversationId}"`);
+
+    const session = info.session ?? sm.resolve(info.binding.sessionId) ?? sm.resolve(info.binding.sessionName);
+    if (!session) throw new Error(`Bound session "${info.binding.sessionName}" is no longer active`);
+
+    const output = session.getOutput(params?.full ? undefined : (params?.lines ?? 50));
+    return {
+      ok: true,
+      conversationId,
+      binding: {
+        sessionId: info.binding.sessionId,
+        sessionName: info.binding.sessionName,
+        queuedMessages: info.binding.pendingMessages.length,
+      },
+      session: {
+        id: session.id,
+        name: session.name,
+        status: session.status,
+        waitingForInput: session.isWaitingForInput,
+        workdir: session.workdir,
+      },
+      output,
     };
   });
 }
