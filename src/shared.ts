@@ -8,6 +8,7 @@ import type { ChatBridgeManager } from "./chat-bridge";
 let _sessionManager: SessionManager | null = null;
 let _notificationRouter: NotificationRouter | null = null;
 let _chatBridgeManager: ChatBridgeManager | null = null;
+let _conversationSessionKeys: Map<string, string> = new Map();
 
 export const pluginConfig: PluginConfig = {
   maxSessions: 5,

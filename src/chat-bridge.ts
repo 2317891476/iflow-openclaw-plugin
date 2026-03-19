@@ -17,6 +17,7 @@ export interface ChatBridgeCommandContext {
   agentId?: string;
   agentAccountId?: string;
   conversationId?: string;
+  sessionKey?: string;
 }
 
 export interface ChatBridgeSessionInfo {
@@ -30,6 +31,12 @@ function buildChatBindingKey(ctx: ChatBridgeCommandContext): string {
     ctx.agentAccountId || "-",
     ctx.conversationId || "-",
   ].join("::");
+}
+
+function resolveForegroundChannel(ctx: ChatBridgeCommandContext): string {
+  if (ctx.sessionKey) return `chatinject|${ctx.sessionKey}`;
+  if (ctx.conversationId) return `chatinject|${ctx.conversationId}`;
+  return ctx.messageChannel || "unknown";
 }
 
 function summarize(text: string, n = 80): string {

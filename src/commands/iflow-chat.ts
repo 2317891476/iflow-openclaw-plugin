@@ -12,12 +12,18 @@ export function registerIFlowChatCommand(api: any) {
       const bridge = getChatBridgeManager();
       if (!bridge) return { text: "Error: Chat bridge not initialized." };
 
+      console.log(`[iflow-chat] ctx keys=${Object.keys(ctx || {}).sort().join(",")}`);
+      console.log(`[iflow-chat] ctx channel=${ctx?.channel} channelId=${ctx?.channelId} messageChannel=${ctx?.messageChannel} from=${ctx?.from} to=${ctx?.to} accountId=${ctx?.accountId} conversationId=${ctx?.conversationId} sessionKey=${ctx?.sessionKey}`);
+      const conversationId = ctx?.conversationId;
+      const resolvedSessionKey = ctx?.sessionKey ?? getConversationSessionKey(conversationId);
+      console.log(`[iflow-chat] resolvedSessionKey=${resolvedSessionKey} for conversationId=${conversationId}`);
       const text = await bridge.handleInput(ctx.args ?? "", {
         workspaceDir: ctx?.workspaceDir,
-        messageChannel: ctx?.messageChannel,
+        messageChannel: ctx?.messageChannel ?? ctx?.channelId ?? ctx?.channel,
         agentId: ctx?.agentId,
-        agentAccountId: ctx?.agentAccountId,
-        conversationId: ctx?.conversationId,
+        agentAccountId: ctx?.agentAccountId ?? ctx?.accountId,
+        conversationId,
+        sessionKey: resolvedSessionKey,
       });
 
       return { text };

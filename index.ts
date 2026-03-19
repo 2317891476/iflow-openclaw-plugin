@@ -26,6 +26,7 @@ import {
   setChatBridgeManager,
   pluginConfig,
   parseChannel,
+  rememberConversationSessionKey,
 } from "./src/shared";
 import { execFile } from "child_process";
 
