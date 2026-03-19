@@ -39,6 +39,7 @@ export function setPluginConfig(config: Record<string, any>): void {
   if (typeof config.iflowTimeout === "number") pluginConfig.iflowTimeout = config.iflowTimeout;
   if (typeof config.fallbackChannel === "string") pluginConfig.fallbackChannel = config.fallbackChannel;
   if (typeof config.defaultWorkdir === "string") pluginConfig.defaultWorkdir = config.defaultWorkdir;
+  if (typeof config.defaultChatSessionKey === "string") pluginConfig.defaultChatSessionKey = config.defaultChatSessionKey;
   if (typeof config.permissionMode === "string") pluginConfig.permissionMode = config.permissionMode as any;
   if (typeof config.skipSafetyChecks === "boolean") pluginConfig.skipSafetyChecks = config.skipSafetyChecks;
   if (config.agentChannels && typeof config.agentChannels === "object") {

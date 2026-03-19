@@ -85,6 +85,8 @@ export interface SessionMetrics {
 export interface PluginConfig {
   maxSessions: number;
   defaultWorkdir?: string;
+  /** Fixed transcript sessionKey used by /i and /iflow_chat when command context cannot provide one reliably. */
+  defaultChatSessionKey?: string;
   idleTimeoutMinutes: number;
   maxPersistedSessions: number;
   fallbackChannel?: string;

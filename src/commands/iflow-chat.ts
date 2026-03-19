@@ -1,4 +1,4 @@
-import { getChatBridgeManager } from "../shared";
+import { getChatBridgeManager, pluginConfig } from "../shared";
 
 function buildBridgeContext(ctx: any) {
   return {
@@ -7,7 +7,7 @@ function buildBridgeContext(ctx: any) {
     agentId: ctx?.agentId,
     agentAccountId: ctx?.agentAccountId ?? ctx?.accountId,
     conversationId: ctx?.conversationId,
-    sessionKey: ctx?.sessionKey,
+    sessionKey: ctx?.sessionKey ?? pluginConfig.defaultChatSessionKey,
   };
 }
 
@@ -34,5 +34,5 @@ function registerAlias(api: any, name: string, description: string) {
  */
 export function registerIFlowChatCommand(api: any) {
   registerAlias(api, "iflow_chat", "Simple chat mode for iFlow. Use /iflow_chat <message>, plus /iflow_chat status|stop.");
-  registerAlias(api, "i", "Short iFlow chat alias. Use /i <message>, plus /i status|stop|new <message>.");
+  registerAlias(api, "i", "Short iFlow chat alias. Use /i <message>, plus /i status|stop|new <message>. Uses plugin config defaultChatSessionKey when command context lacks a reliable sessionKey.");
 }

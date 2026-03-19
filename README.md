@@ -63,7 +63,8 @@ Add to `~/.openclaw/openclaw.json`:
         "enabled": true,
         "config": {
           "fallbackChannel": "dingtalk|your-dingtalk-userid",
-          "maxSessions": 5
+          "maxSessions": 5,
+          "defaultChatSessionKey": "agent:main:openresponses-user:qq_2317891476"
         }
       }
     }
@@ -119,6 +120,7 @@ Use this when you want to call iFlow more like a normal chat API while still reu
 
 - Preferred chat command: `/i <message>`
 - Compatibility command: `/iflow_chat <message>`
+- For Control UI / WebChat command usage, you can set plugin config `defaultChatSessionKey` so `/i ...` forwards to a fixed target transcript without depending on command-context sessionKey resolution
 - Supports `status`, `stop`, and `new <message>` on the chat commands above
 - `/iflow` remains the orchestration/task-launch command
 - In Control UI / WebChat, bound chat replies are injected back into the current transcript via `chat.inject` using the current session key when available; `/iflow_fg` remains optional for raw streaming/debugging.
