@@ -46,6 +46,7 @@ export class Session {
 
   // Flags
   private waitingForInputFired: boolean = false;
+  private _isWaitingForInput: boolean = false;
 
   // Auto-respond safety cap
   autoRespondCount: number = 0;
@@ -131,6 +132,7 @@ export class Session {
     }
     this.resetIdleTimer();
     this.waitingForInputFired = false;
+    this._isWaitingForInput = false;
     await this.client.sendMessage(text);
   }
 
@@ -183,6 +185,10 @@ export class Session {
     return (this.completedAt ?? Date.now()) - this.startedAt;
   }
 
+  get isWaitingForInput(): boolean {
+    return this._isWaitingForInput;
+  }
+
   // ─── Private: message consumption ────────────────────────────────────────
 
   private async consumeMessages(): Promise<void> {
@@ -192,6 +198,7 @@ export class Session {
 
       if (msg.type === MessageType.ASSISTANT) {
         this.waitingForInputFired = false;
+        this._isWaitingForInput = false;
         const text: string | undefined = msg.chunk?.text;
         if (text) {
           this.appendOutput(text);
@@ -228,6 +235,7 @@ export class Session {
           // End of one turn in multi-turn mode — stay open, notify waiting for input
           console.log(`[Session] ${this.id} multi-turn end-of-turn (turn ${this.turnCount}), staying open`);
           this.resetIdleTimer();
+          this._isWaitingForInput = true;
           if (this.onWaitingForInput && !this.waitingForInputFired) {
             console.log(`[Session] ${this.id} calling onWaitingForInput`);
             this.waitingForInputFired = true;
@@ -286,6 +294,7 @@ export class Session {
       if (this.status === "running" && this.onWaitingForInput && !this.waitingForInputFired) {
         console.log(`[Session] ${this.id} no messages for ${idleMs / 1000}s — firing onWaitingForInput (safety-net)`);
         this.waitingForInputFired = true;
+        this._isWaitingForInput = true;
         this.onWaitingForInput(this);
       }
     }, idleMs);

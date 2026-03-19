@@ -14,13 +14,16 @@ import { registerIFlowBgCommand } from "./src/commands/iflow-bg";
 import { registerIFlowRespondCommand } from "./src/commands/iflow-respond";
 import { registerIFlowStatsCommand } from "./src/commands/iflow-stats";
 import { registerIFlowResumeCommand } from "./src/commands/iflow-resume";
+import { registerIFlowChatCommand } from "./src/commands/iflow-chat";
 import { registerGatewayMethods } from "./src/gateway";
 import { SessionManager } from "./src/session-manager";
 import { NotificationRouter } from "./src/notifications";
+import { ChatBridgeManager } from "./src/chat-bridge";
 import {
   setSessionManager,
   setNotificationRouter,
   setPluginConfig,
+  setChatBridgeManager,
   pluginConfig,
   parseChannel,
 } from "./src/shared";
@@ -30,6 +33,7 @@ import { execFile } from "child_process";
 function register(api: any) {
   let sm: SessionManager | null = null;
   let nr: NotificationRouter | null = null;
+  let chatBridge: ChatBridgeManager | null = null;
   let cleanupInterval: ReturnType<typeof setInterval> | null = null;
 
   // ─── Tools (factory pattern — each invocation receives calling agent's context) ───
@@ -61,6 +65,7 @@ function register(api: any) {
   registerIFlowRespondCommand(api);
   registerIFlowStatsCommand(api);
   registerIFlowResumeCommand(api);
+  registerIFlowChatCommand(api);
 
   // ─── Gateway RPC methods ──────────────────────────────────────────────────────────
 
@@ -146,6 +151,13 @@ function register(api: any) {
       setNotificationRouter(nr);
       sm.notificationRouter = nr;
 
+      chatBridge = new ChatBridgeManager(sm);
+      sm.addListener({
+        onWaitingForInput: (session) => chatBridge?.onWaitingForInput(session),
+        onComplete: (session) => chatBridge?.onSessionComplete(session),
+      });
+      setChatBridgeManager(chatBridge);
+
       // Start long-running session reminder check (every 60s)
       nr.startReminderCheck(() => sm?.list("running") ?? []);
 
@@ -162,8 +174,10 @@ function register(api: any) {
       cleanupInterval = null;
       sm = null;
       nr = null;
+      chatBridge = null;
       setSessionManager(null);
       setNotificationRouter(null);
+      setChatBridgeManager(null);
       console.log("[iflow-plugin] Service stopped.");
     },
   });

@@ -1,11 +1,13 @@
 import type { SessionManager } from "./session-manager";
 import type { NotificationRouter } from "./notifications";
 import type { PluginConfig } from "./types";
+import type { ChatBridgeManager } from "./chat-bridge";
 
 // ─── Global singletons ────────────────────────────────────────────────────────
 
 let _sessionManager: SessionManager | null = null;
 let _notificationRouter: NotificationRouter | null = null;
+let _chatBridgeManager: ChatBridgeManager | null = null;
 
 export const pluginConfig: PluginConfig = {
   maxSessions: 5,
@@ -22,6 +24,10 @@ export function setSessionManager(sm: SessionManager | null): void {
 
 export function setNotificationRouter(nr: NotificationRouter | null): void {
   _notificationRouter = nr;
+}
+
+export function setChatBridgeManager(manager: ChatBridgeManager | null): void {
+  _chatBridgeManager = manager;
 }
 
 export function setPluginConfig(config: Record<string, any>): void {
@@ -45,6 +51,10 @@ export function getSessionManager(): SessionManager | null {
 
 export function getNotificationRouter(): NotificationRouter | null {
   return _notificationRouter;
+}
+
+export function getChatBridgeManager(): ChatBridgeManager | null {
+  return _chatBridgeManager;
 }
 
 // Convenience proxy — modules can import `sessionManager` directly and it will

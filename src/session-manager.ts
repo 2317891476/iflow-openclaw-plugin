@@ -16,6 +16,10 @@ const WAITING_EVENT_DEBOUNCE_MS = 5_000;
 
 export class SessionManager {
   private sessions: Map<string, Session> = new Map();
+  private listeners: {
+    onWaitingForInput?: (session: Session) => void;
+    onComplete?: (session: Session) => void;
+  }[] = [];
   private persistedSessions: Map<string, PersistedSessionInfo> = new Map();
   private maxSessions: number;
   private maxPersistedSessions: number;
@@ -34,6 +38,13 @@ export class SessionManager {
   constructor(maxSessions: number = 5, maxPersistedSessions: number = 50) {
     this.maxSessions = maxSessions;
     this.maxPersistedSessions = maxPersistedSessions;
+  }
+
+  addListener(listener: {
+    onWaitingForInput?: (session: Session) => void;
+    onComplete?: (session: Session) => void;
+  }): void {
+    this.listeners.push(listener);
   }
 
   // ─── Session lifecycle ────────────────────────────────────────────────────
@@ -73,6 +84,7 @@ export class SessionManager {
         console.log(`[SessionManager] session.onWaitingForInput fired for session=${session.id}`);
         nr.onWaitingForInput(session);
         this.triggerWaitingForInputEvent(session);
+        for (const listener of this.listeners) listener.onWaitingForInput?.(session);
       };
 
       session.onComplete = () => {
@@ -80,6 +92,7 @@ export class SessionManager {
         this.persistSession(session);
         nr.onSessionComplete(session);
         this.triggerAgentEvent(session);
+        for (const listener of this.listeners) listener.onComplete?.(session);
       };
     } else {
       console.warn(`[SessionManager] No NotificationRouter available when spawning session=${session.id}`);
