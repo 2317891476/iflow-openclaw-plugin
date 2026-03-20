@@ -1,17 +1,22 @@
 import { getChatBridgeManager, pluginConfig } from "../shared";
 
-function buildBridgeContext(ctx: any) {
+function buildBridgeContext(ctx: any, opts?: { forceStableConversationId?: boolean }) {
+  const sessionKey = ctx?.sessionKey ?? pluginConfig.defaultChatSessionKey;
+  const conversationId = opts?.forceStableConversationId
+    ? (ctx?.conversationId ?? sessionKey)
+    : ctx?.conversationId;
+
   return {
     workspaceDir: ctx?.workspaceDir,
     messageChannel: ctx?.messageChannel ?? ctx?.channelId ?? ctx?.channel,
     agentId: ctx?.agentId,
     agentAccountId: ctx?.agentAccountId ?? ctx?.accountId,
-    conversationId: ctx?.conversationId,
-    sessionKey: ctx?.sessionKey ?? pluginConfig.defaultChatSessionKey,
+    conversationId,
+    sessionKey,
   };
 }
 
-function registerAlias(api: any, name: string, description: string) {
+function registerAlias(api: any, name: string, description: string, opts?: { forceStableConversationId?: boolean }) {
   api.registerCommand({
     name,
     description,
@@ -23,7 +28,7 @@ function registerAlias(api: any, name: string, description: string) {
       console.log(`[${name}] ctx keys=${Object.keys(ctx || {}).sort().join(",")}`);
       console.log(`[${name}] ctx channel=${ctx?.channel} channelId=${ctx?.channelId} messageChannel=${ctx?.messageChannel} from=${ctx?.from} to=${ctx?.to} accountId=${ctx?.accountId} conversationId=${ctx?.conversationId} sessionKey=${ctx?.sessionKey}`);
 
-      const text = await bridge.handleInput(ctx.args ?? "", buildBridgeContext(ctx));
+      const text = await bridge.handleInput(ctx.args ?? "", buildBridgeContext(ctx, opts));
       return { text };
     },
   });
@@ -34,5 +39,10 @@ function registerAlias(api: any, name: string, description: string) {
  */
 export function registerIFlowChatCommand(api: any) {
   registerAlias(api, "iflow_chat", "Simple chat mode for iFlow. Use /iflow_chat <message>, plus /iflow_chat status|stop.");
-  registerAlias(api, "i", "Short iFlow chat alias. Use /i <message>, plus /i status|stop|new <message>. Uses plugin config defaultChatSessionKey when command context lacks a reliable sessionKey.");
+  registerAlias(
+    api,
+    "i",
+    "Short iFlow chat alias. Use /i <message>, plus /i status|stop|new <message>. Uses plugin config defaultChatSessionKey when command context lacks a reliable sessionKey.",
+    { forceStableConversationId: true },
+  );
 }
